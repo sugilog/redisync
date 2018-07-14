@@ -1,4 +1,4 @@
-package main
+package redisync
 
 import (
 	"fmt"
@@ -7,13 +7,27 @@ import (
 	"github.com/gomodule/redigo/redis"
 )
 
-func main() {
-	conn, err := redis.Dial("tcp", ":6379")
+type Client struct {
+	Pool *redis.Pool
+}
 
-	if err != nil {
-		panic(err)
+func NewClient(address string) *Client {
+	return Client{
+		// IdleTimeout
+		// Wait
+		// MaxConnLifetime
+		MaxIdle:   200,
+		MaxActive: 50,
+		Pool: &redis.Pool{
+			Dial: func() (redis.Conn, error) {
+				return redis.Dial("tcp", address)
+			},
+		},
 	}
+}
 
+func (client *Client) Start() err {
+	conn := client.Pool.Get()
 	defer conn.Close()
 
 	// https://godoc.org/github.com/gomodule/redigo/redis#hdr-Publish_and_Subscribe
