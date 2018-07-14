@@ -12,13 +12,13 @@ type Client struct {
 }
 
 func NewClient(address string) *Client {
-	return Client{
+	return &Client{
 		// IdleTimeout
 		// Wait
 		// MaxConnLifetime
-		MaxIdle:   200,
-		MaxActive: 50,
 		Pool: &redis.Pool{
+			MaxIdle:   200,
+			MaxActive: 50,
 			Dial: func() (redis.Conn, error) {
 				return redis.Dial("tcp", address)
 			},
@@ -26,7 +26,7 @@ func NewClient(address string) *Client {
 	}
 }
 
-func (client *Client) Start() err {
+func (client *Client) Start() error {
 	conn := client.Pool.Get()
 	defer conn.Close()
 
