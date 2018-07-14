@@ -7,11 +7,6 @@ import (
 	"github.com/gomodule/redigo/redis"
 )
 
-// get messages
-// [set a 1 EX 5]
-// [DEL a]
-// [del a]
-
 func main() {
 	conn, err := redis.Dial("tcp", ":6379")
 
@@ -36,12 +31,15 @@ func main() {
 		case []byte:
 			message := string(v[:])
 
-			if message == "PING" {
-				// nothing to do
-			} else if strings.Contains(message, "redis-ver") {
-				// nothing to do
-			} else {
-				fmt.Println(message)
+			switch message {
+			case "PING":
+			case "SELECT":
+			case "0":
+			default:
+				if strings.Contains(message, "redis-ver") {
+				} else {
+					panic(fmt.Sprintf("unsupported message, %s", message))
+				}
 			}
 		case []interface{}:
 			messages := make([]string, len(v))
@@ -51,11 +49,18 @@ func main() {
 				messages[i] = string(message[:])
 			}
 
+			command := strings.ToUpper(messages[0])
+			args := messages[1:]
+
 			switch messages[0] {
 			case "PING":
 			case "SELECT":
 			default:
-				fmt.Println(messages)
+				// get messages
+				// [set a 1 EX 5]
+				// [DEL a]
+				// [del a]
+				fmt.Printf("command: %s, args: %v\n", command, args)
 			}
 		default:
 			panic(fmt.Sprintf("unsupported message, %v", v))
