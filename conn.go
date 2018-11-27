@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"strconv"
+	"strings"
 )
 
 var (
@@ -31,9 +32,43 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Fprintf(conn, "SYNC\r\n")
-
 	reader := bufio.NewReader(conn)
+
+	fmt.Fprintf(conn, "INFO replication\r\n")
+
+	line, err := reader.ReadBytes('\n')
+
+	if err != nil {
+		panic(err)
+	}
+
+	n, err := strconv.Atoi(string(bytes.TrimSuffix(line, LB)[1:]))
+
+	if err != nil {
+		panic(err)
+	}
+
+	info := make(map[string]string)
+
+	for {
+		if n > 0 {
+			if line, err := reader.ReadBytes('\n'); err != nil {
+				panic(err)
+			} else {
+				n -= len(line)
+
+				args := strings.SplitN(string(bytes.TrimSuffix(line, LB)), ":", 2)
+
+				if len(args) == 2 {
+					info[args[0]] = args[1]
+				}
+			}
+		} else {
+			break
+		}
+	}
+
+	fmt.Fprintf(conn, "PSYNC %s %s\r\n", info["master_replid"], info["repl_backlog_first_byte_offset"])
 	var ope Operation
 
 	for {
